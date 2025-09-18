@@ -1,0 +1,11 @@
+[
+    {
+        "label": "s",
+        "kind": 5,
+        "importPath": "t",
+        "description": "t",
+        "peekOfCode": "s = \"fjkj\"\nprint(s.capitalize())",
+        "detail": "t",
+        "documentation": {}
+    }
+]
