@@ -7,6 +7,7 @@ import json
 import os
 from urllib.parse import urlparse
 import uuid
+import database as db
 
 STATIC_FILES_DIR = "static"
 UPLOAD_DIR = "images"
@@ -235,6 +236,22 @@ def run_server(
     httpd.server_close()
     logging.info("Сервер остановлен.")
 
+def initialize_app():
+    logging.info("Инициализация приложения...")
+    if db.test_connection():
+        logging.info("Подключение к базе данных установлено.")
+        if db.init_database():
+            logging.info("База данных инициализирована и готова к использованию.")
+        else:
+            logging.error("Ошибка при инициализации базы данных: таблица не создана.")
+            return False
+    else:
+        logging.error("Ошибка при подключении к базе данных. Проверьте конфигурацию в Docker Compose.")
+        return False
+    return True
 
 if __name__ == "__main__":
-    run_server()
+    if initialize_app():
+        run_server()
+    else:
+        logging.error("Не удалось инициализировать приложение. Сервер не запущен.")
