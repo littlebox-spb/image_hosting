@@ -52,55 +52,41 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  function loadImagesFromLocalStorage() {
-    const storedImages = localStorage.getItem("uploadedImages");
-    if (storedImages) {
-      try {
-        uploadedImages = JSON.parse(storedImages);
-        renderImages();
-      } catch (error) {
-        console.error("Error loading images from local storage:", error);
-        uploadedImages = [];
-      }
-    }
-  }
-
-  function saveImagesToLocalStorage() {
-    localStorage.setItem("uploadedImages", JSON.stringify(uploadedImages));
-  }
-
   function handleFileUpload(file) {
-    urlInput.value = '';
-    uploadError.classList.add('hidden');
+    urlInput.value = "";
+    uploadError.classList.add("hidden");
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
-    fetch('/upload', {
-        method: 'POST',
-        body: formData
+    fetch("/upload", {
+      method: "POST",
+      body: formData,
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            urlInput.value = data.url;
-            uploadedImages.push({ id: Date.now(), name: file.name, url: data.url });
-            saveImagesToLocalStorage();
-            if (imagesView.classList.contains('hidden')) {
-            } else {
-                renderImages();
-            }
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === "success") {
+          urlInput.value = data.url;
+          uploadedImages.push({
+            id: Date.now(),
+            name: file.name,
+            url: data.url,
+          });
+          if (imagesView.classList.contains("hidden")) {
+          } else {
+            renderImages();
+          }
         } else {
-            uploadError.textContent = data.message;
-            uploadError.classList.remove('hidden');
+          uploadError.textContent = data.message;
+          uploadError.classList.remove("hidden");
         }
-    })
-    .catch(error => {
-        console.error('Upload failed:', error);
-        uploadError.textContent = 'Upload failed due to network error.';
-        uploadError.classList.remove('hidden');
-    });
-}
+      })
+      .catch((error) => {
+        console.error("Upload failed:", error);
+        uploadError.textContent = "Upload failed due to network error.";
+        uploadError.classList.remove("hidden");
+      });
+  }
 
   browseBtn.addEventListener("click", () => {
     fileInput.click();
@@ -144,36 +130,50 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  function renderImages() {
-    imageList.innerHTML = "";
-    if (uploadedImages.length === 0) {
-      imageList.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 20px;" class="no-images">No images uploaded yet.</p>`;
-      return;
+  async function renderImages() {
+    try {
+      const response = await fetch("/images-list");
+      const data = await response.json();
+      uploadedImages = data.images;
+      imageList.innerHTML = "";
+      if (uploadedImages.length === 0) {
+        imageList.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 20px;" class="no-images">No images uploaded yet.</p>`;
+        return;
+      }
+      uploadedImages.forEach((image) => {
+        const templateClone = imageItemTemplate.content.cloneNode(true);
+        templateClone.querySelector(".image-item").dataset.id = image.id;
+        templateClone.querySelector(".image-item__name span").textContent =
+          image.original_name;
+        const urlLink = templateClone.querySelector(".image-item__url a");
+        urlLink.href = `/images/${image.filename}`;
+        urlLink.textContent = `/images/${image.filename}`;
+        imageList.appendChild(templateClone);
+      });
+    } catch (error) {
+      console.error("Error fetching images:", error);
     }
-    uploadedImages.forEach((image) => {
-      const templateClone = imageItemTemplate.content.cloneNode(true);
-      templateClone.querySelector(".image-item").dataset.id = image.id;
-      templateClone.querySelector(".image-item__name span").textContent =
-        image.name;
-      const urlLink = templateClone.querySelector(".image-item__url a");
-      urlLink.href = image.url;
-      urlLink.textContent = image.url;
-      templateClone.querySelector(".image-item__url a").href = image.url;
-      imageList.appendChild(templateClone);
-    });
   }
 
-  imageList.addEventListener("click", (e) => {
+  imageList.addEventListener("click", async (e) => {
     const deleteButton = e.target.closest(".delete-btn");
     if (deleteButton) {
       const listItem = e.target.closest(".image-item");
       const imageId = parseInt(listItem.dataset.id, 10);
-      uploadedImages = uploadedImages.filter((img) => img.id !== imageId);
-      saveImagesToLocalStorage();
-      renderImages();
+      if (confirm("Are you sure you want to delete this image?")) {
+        try {
+          const response = await fetch(`/delete/${imageId}`, {
+            method: "DELETE",
+          });
+          if (response.ok) {
+            renderImages();
+          }
+        } catch (error) {
+          console.error("Error deleting image:", error);
+        }
+      }
     }
   });
 
-  loadImagesFromLocalStorage();
   setRandomHeroImage();
 });
