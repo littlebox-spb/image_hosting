@@ -130,14 +130,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  async function renderImages() {
+  let current_page = 1;
+
+  async function renderImages(page = 1) {
     try {
-      const response = await fetch("/images-list");
+      const response = await fetch(`/images-list?page=${page}`);
       const data = await response.json();
       uploadedImages = data.images;
       imageList.innerHTML = "";
+      const paginationContainer = document.getElementById("pagination");
       if (uploadedImages.length === 0) {
         imageList.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 20px;" class="no-images">No images uploaded yet.</p>`;
+        paginationContainer.innerHTML = "";
         return;
       }
       uploadedImages.forEach((image) => {
@@ -150,8 +154,39 @@ document.addEventListener("DOMContentLoaded", () => {
         urlLink.textContent = `/images/${image.filename}`;
         imageList.appendChild(templateClone);
       });
+      if (paginationContainer) {
+        paginationContainer.innerHTML = `
+          <button id="prev-page" ${
+            !data.pagination.has_prev ? "disabled" : ""
+          }>Previous</button>
+          <span>Page ${data.pagination.current_page} of ${
+          data.pagination.total_pages
+        }</span>
+          <button id="next-page" ${
+            !data.pagination.has_next ? "disabled" : ""
+          }>Next</button>
+        `;
+
+        document.getElementById("prev-page").addEventListener("click", () => {
+          if (current_page > 1) {
+            current_page--;
+            renderImages(current_page);
+          }
+        });
+
+        document.getElementById("next-page").addEventListener("click", () => {
+          if (data.pagination.has_next) {
+            current_page++;
+            renderImages(current_page);
+          }
+        });
+      }
     } catch (error) {
       console.error("Error fetching images:", error);
+      const paginationContainer = document.getElementById("pagination");
+      if (paginationContainer) {
+        paginationContainer.innerHTML = "";
+      }
     }
   }
 

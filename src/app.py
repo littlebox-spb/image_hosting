@@ -53,6 +53,8 @@ class ImageHostingHandler(http.server.BaseHTTPRequestHandler):
         parsed_path = urlparse(self.path)
         if parsed_path.path.startswith("/images-list"):
             try:
+                page = int(parsed_path.query.split("=")[1]) if parsed_path.query else 1
+                offset = (page - 1) * 10
                 conn = db.get_connection()
                 if not conn:
                     self._set_headers(500, "application/json")
@@ -63,16 +65,20 @@ class ImageHostingHandler(http.server.BaseHTTPRequestHandler):
                     self.wfile.write(json.dumps(response).encode("utf-8"))
                     return
                 cursor = conn.cursor()
+                cursor.execute("""SELECT COUNT(*) FROM images;""")
+                total_images = cursor.fetchone()[0]
+                total_pages = (total_images + 9) // 10
                 cursor.execute(
                     """SELECT id, filename, original_name, size, upload_time, file_type 
                                FROM images
-                               ORDER BY upload_time DESC;"""
+                               ORDER BY upload_time DESC
+                               LIMIT 10 OFFSET %s;""",
+                    (offset,),
                 )
                 images = cursor.fetchall()
-                self._set_headers(200, "application/json")
-                images_list = []
-                for image in images:
-                    images_list.append(
+                response = {
+                    "status": "success",
+                    "images": [
                         {
                             "id": image[0],
                             "filename": image[1],
@@ -81,10 +87,18 @@ class ImageHostingHandler(http.server.BaseHTTPRequestHandler):
                             "upload_time": image[4].strftime("%Y-%m-%d %H:%M:%S"),
                             "file_type": image[5],
                         }
-                    )
-                response = {"status": "success", "images": images_list}
+                        for image in images
+                    ],
+                    "pagination": {
+                        "total_pages": total_pages,
+                        "current_page": page,
+                        "has_prev": page > 1,
+                        "has_next": page < total_pages,
+                    },
+                }
+                self._set_headers(200, "application/json")
                 self.wfile.write(json.dumps(response).encode("utf-8"))
-                logging.info(f"Получен список изображений: {len(images_list)} записей.")
+                logging.info(f"Получен список изображений: {total_images} записей.")
             except Exception as e:
                 logging.error(f"Ошибка при получении списка изображений: {e}")
                 self._set_headers(500, "application/json")
