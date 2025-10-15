@@ -12,6 +12,15 @@ DB_CONFIG = {
 
 
 def get_connection():
+    """
+    Returns a connection to the PostgreSQL database.
+
+    Returns:
+        conn (psycopg2.extensions.connection): Connection to the database.
+
+    Raises:
+        psycopg2.Error: If there is an error connecting to the database.
+    """
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         return conn
@@ -21,6 +30,15 @@ def get_connection():
 
 
 def test_connection():
+    """
+    Тестирует подключение к базе данных PostgreSQL.
+
+    Возвращает:
+        bool: True если подключение успешно, иначе False.
+
+    Raises:
+        psycopg2.Error: Если возникла ошибка подключения к базе данных.
+    """
     conn = get_connection()
     if conn:
         try:
@@ -40,6 +58,18 @@ def test_connection():
 
 
 def init_database():
+    """
+    Инициализирует таблицу images в базе данных PostgreSQL.
+
+    Если таблица images не существует, то она будет создана.
+    В противном случае, функция просто возвращает True.
+
+    Возвращает:
+        bool: True если таблица images создана успешно, иначе False.
+
+    Raises:
+        psycopg2.Error: Если возникла ошибка подключения к базе данных.
+    """
     conn = get_connection()
     if conn:
         try:

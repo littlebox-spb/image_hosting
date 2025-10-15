@@ -1,7 +1,7 @@
 [project]
-name = "backend"
+name = "Image_Hosting"
 version = "0.1.0"
-description = "Backend for image hosting"
+description = "Image Hosting for Private Server"
 authors = [
     {name = "Alexandr Altukhov"}
 ]

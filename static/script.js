@@ -23,6 +23,13 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
   let uploadedImages = [];
 
+  /*
+   * Sets a random hero image from the heroImages array.
+   *
+   * @function setRandomHeroImage
+   * @return {void}
+   */
+
   function setRandomHeroImage() {
     const randomIndex = Math.floor(Math.random() * heroImages.length);
     const randomImage = heroImages[randomIndex];
@@ -52,6 +59,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  /**
+   * Handles a file upload event by sending the file to the server
+   * and populating the URL input field with the uploaded image's URL.
+   *
+   * @param {File} file - The file to be uploaded.
+   */
   function handleFileUpload(file) {
     urlInput.value = "";
     uploadError.classList.add("hidden");
@@ -132,6 +145,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let current_page = 1;
 
+  /**
+   * Renders a list of uploaded images
+   * @param {number} page - The page number to render, defaults to 1
+   * @throws {Error} If there is an error fetching the images
+   */
   async function renderImages(page = 1) {
     try {
       const response = await fetch(`/images-list?page=${page}`);
